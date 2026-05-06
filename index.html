@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Lab | 數學思考遊戲</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Cpath d='M16 19h32v7H16zm0 12h13v14H16zm19 0h13v14H35z' fill='%23fff7ed'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Math Thinking Lab</p>
+      <h1>數學思考遊戲館</h1>
+      <p class="subtitle">用排程、時間與邏輯推理，練習把問題拆成可操作的步驟。</p>
+    </div>
+    <nav class="game-tabs" aria-label="遊戲切換">
+      <button class="tab-button active" data-game="schedule">排程挑戰</button>
+      <button class="tab-button" data-game="hourglass">沙漏挑戰</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="game-panel active" id="schedule-game" aria-labelledby="schedule-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Game 1</p>
+          <h2 id="schedule-title">優化家事排程圖</h2>
+          <p>安排小佑完成所有家事。機器任務可以自己跑，手動任務不能互相重疊。</p>
+        </div>
+        <div class="score-card">
+          <span>總時間</span>
+          <strong id="schedule-total">0</strong>
+          <small>分鐘</small>
+        </div>
+      </div>
+
+      <div class="schedule-layout">
+        <aside class="task-bank">
+          <div class="section-title">任務銀行</div>
+          <div id="task-bank" class="task-list"></div>
+          <button class="text-button danger" id="schedule-reset">全部重設</button>
+        </aside>
+
+        <div class="work-area">
+          <div class="chart-card">
+            <div class="timeline">
+              <span></span>
+              <div id="time-ruler" class="ruler"></div>
+            </div>
+            <div id="gantt-chart"></div>
+          </div>
+
+          <div id="schedule-feedback" class="feedback-area"></div>
+
+          <section class="detail-card">
+            <div class="section-title">排程詳細調整</div>
+            <div id="schedule-details" class="detail-grid empty-state">先從左側加入任務。</div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="game-panel" id="hourglass-game" aria-labelledby="hourglass-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Game 2</p>
+          <h2 id="hourglass-title">沙漏計時挑戰：量測 25 分鐘</h2>
+          <p>操作 7 分鐘與 10 分鐘沙漏，利用每次漏完的時間點做下一步決策。</p>
+        </div>
+        <div class="score-card warm">
+          <span>總時間</span>
+          <strong id="global-time">0</strong>
+          <small>分鐘</small>
+        </div>
+      </div>
+
+      <div class="hourglass-controls">
+        <button class="primary-button" id="btn-action">開始流動</button>
+        <button class="secondary-button" id="btn-hourglass-reset">重新開始</button>
+      </div>
+
+      <div class="hourglass-layout">
+        <article class="hourglass-card">
+          <h3>7 分鐘沙漏 A</h3>
+          <div class="glass" aria-label="7 分鐘沙漏">
+            <div class="bulb top"><div class="sand" id="a-top-sand"></div><span id="a-top-text">7 分</span></div>
+            <div class="neck"></div>
+            <div class="bulb bottom"><div class="sand" id="a-bot-sand"></div><span id="a-bot-text">0 分</span></div>
+          </div>
+          <button class="flip-button" id="btn-flip-a">翻轉 A</button>
+        </article>
+
+        <article class="hourglass-card">
+          <h3>10 分鐘沙漏 B</h3>
+          <div class="glass" aria-label="10 分鐘沙漏">
+            <div class="bulb top"><div class="sand" id="b-top-sand"></div><span id="b-top-text">10 分</span></div>
+            <div class="neck"></div>
+            <div class="bulb bottom"><div class="sand" id="b-bot-sand"></div><span id="b-bot-text">0 分</span></div>
+          </div>
+          <button class="flip-button" id="btn-flip-b">翻轉 B</button>
+        </article>
+
+        <aside class="log-panel">
+          <div class="section-title">動作紀錄</div>
+          <div class="log-box" id="log"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
