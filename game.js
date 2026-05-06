@@ -263,6 +263,32 @@ function renderLobby() {
       ${renderTopBar("數學思考 RPG 大廳")}
       <section class="lobby-layout">
         <div class="pixel-map" aria-label="RPG 大廳地圖">
+          <div class="map-water water-left"></div>
+          <div class="map-water water-right"></div>
+          <div class="map-water water-bottom"></div>
+          <div class="map-bridge bridge-main"></div>
+          <div class="map-bridge bridge-side"></div>
+          <div class="temple">
+            <div class="temple-roof"></div>
+            <div class="temple-body">
+              <span>數學道場</span>
+            </div>
+          </div>
+          <div class="stone-path path-main"></div>
+          <div class="stone-path path-left"></div>
+          <div class="stone-path path-right"></div>
+          <div class="shrine shrine-a"></div>
+          <div class="shrine shrine-b"></div>
+          <div class="barrel"></div>
+          <div class="tree tree-a"></div>
+          <div class="tree tree-b"></div>
+          <div class="tree tree-c"></div>
+          <div class="tree tree-d"></div>
+          <div class="tree tree-e"></div>
+          <div class="tree tree-f"></div>
+          <div class="leaf leaf-a"></div>
+          <div class="leaf leaf-b"></div>
+          <div class="leaf leaf-c"></div>
           <div class="map-road road-h"></div>
           <div class="map-road road-v"></div>
           <div class="player-sprite">你</div>
@@ -827,8 +853,9 @@ function renderGuardPreview() {
 function submitGuardAnswer() {
   const mappedAnswer = convertWord("RAB");
   const correctByMap = guardState.map.A === "9" && guardState.map.B === "6" && guardState.map.E === "3" && guardState.map.R === "4";
-  const correct = guardState.answer === "496" || (correctByMap && mappedAnswer === "496");
-  appState.progress.attempts.guard.push({ answer: guardState.answer || mappedAnswer, at: Date.now() });
+  const typedAnswer = guardState.answer.trim();
+  const correct = typedAnswer ? typedAnswer === "496" : correctByMap && mappedAnswer === "496";
+  appState.progress.attempts.guard.push({ answer: typedAnswer || mappedAnswer, at: Date.now() });
   saveProgress();
   if (correct) {
     $("#guard-feedback").innerHTML = `<div class="message success">正確。RAB 轉成 496，警衛雅克找回遺失鑰匙。<button class="small-button" id="complete-guard">完成本關</button></div>`;
@@ -837,8 +864,8 @@ function submitGuardAnswer() {
   }
   guardState.mistakes += 1;
   const hint = guardState.mistakes < 2
-    ? "先看 BEB=636，所以 B=6、E=3。"
-    : "再看 AER=934，所以 A=9、E=3、R=4。RAB 就是 R、A、B 的數字。";
+    ? "先觀察 BEB 和 636：同一個字母出現在第 1、3 位，對應的數字也應該一樣。"
+    : "再比較 AER 和 EAB：相同字母換位置時，數字也會跟著移到同一個位置。請依 R、A、B 的順序重新檢查。";
   $("#guard-feedback").innerHTML = `<div class="message error">還不對。${hint}</div>`;
 }
 
