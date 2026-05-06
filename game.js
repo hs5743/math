@@ -19,6 +19,7 @@ function switchGame(game) {
   $$(".tab-button").forEach((button) => button.classList.toggle("active", button.dataset.game === game));
   $("#schedule-game").classList.toggle("active", game === "schedule");
   $("#hourglass-game").classList.toggle("active", game === "hourglass");
+  $("#bus-game").classList.toggle("active", game === "bus");
 }
 
 function analyzeSchedule() {
@@ -293,6 +294,133 @@ function resetHourglass() {
   updateHourglassUI();
 }
 
+const busState = {
+  large: 0,
+  medium: 0,
+  history: []
+};
+
+const busRules = {
+  target: 155,
+  largeCapacity: 40,
+  largeCost: 9000,
+  mediumCapacity: 25,
+  mediumCost: 5000
+};
+
+let toastTimer = null;
+
+function formatMoney(value) {
+  return `$${value.toLocaleString("en-US")}`;
+}
+
+function getBusStats() {
+  const capacity = busState.large * busRules.largeCapacity + busState.medium * busRules.mediumCapacity;
+  const cost = busState.large * busRules.largeCost + busState.medium * busRules.mediumCost;
+  const empty = capacity - busRules.target;
+  return {
+    capacity,
+    cost,
+    empty,
+    isValid: capacity >= busRules.target
+  };
+}
+
+function evaluateBusCombination(large, medium, cost, empty) {
+  if (large === 4 && medium === 0) return { tag: "陷阱解", desc: "看似直觀全用大車，但花費較高。", tone: "warning" };
+  if (large === 3 && medium === 2) return { tag: "最差解", desc: "車位足夠，但花費最高，值得重新調整。", tone: "bad" };
+  if (large === 2 && medium === 3) return { tag: "最佳解", desc: "剛好 155 人沒有空位，也是最划算的方案。", tone: "best", isBest: true };
+  if (large === 1 && medium === 5) return { tag: "可行", desc: "可以出發，但仍有更便宜的組合。", tone: "normal" };
+  if (large === 0 && medium === 7) return { tag: "可行", desc: "全用中型巴士也能出發，但空位較多。", tone: "normal" };
+  if (cost === 33000 && empty === 0) return { tag: "最佳解", desc: "剛好沒有空位，總花費也最低。", tone: "best", isBest: true };
+  if (empty > 20) return { tag: "極度浪費", desc: "空位太多，代表資源配置還能再壓縮。", tone: "bad" };
+  return { tag: "可行方案", desc: "任務可達成，請比較是否還能降低花費。", tone: "normal" };
+}
+
+function showToast(message, type = "info") {
+  const toast = $("#toast");
+  window.clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.className = `toast show ${type}`;
+  toastTimer = window.setTimeout(() => {
+    toast.className = "toast";
+  }, 3000);
+}
+
+function updateBusCount(kind, delta) {
+  busState[kind] = Math.max(0, busState[kind] + delta);
+  renderBusGame();
+}
+
+function dispatchBusPlan() {
+  const stats = getBusStats();
+  if (!stats.isValid) {
+    showToast("座位不足，這樣有人無法出發。", "error");
+    return;
+  }
+
+  if (busState.history.some((record) => record.large === busState.large && record.medium === busState.medium)) {
+    showToast("這個方案已經嘗試過了，換個組合比較看看。", "error");
+    return;
+  }
+
+  const evaluation = evaluateBusCombination(busState.large, busState.medium, stats.cost, stats.empty);
+  busState.history.unshift({
+    id: Date.now(),
+    large: busState.large,
+    medium: busState.medium,
+    ...stats,
+    evaluation
+  });
+
+  showToast(evaluation.isBest ? "太棒了，你找到了最佳解。" : "方案已記錄，繼續比較更划算的組合。", evaluation.isBest ? "success" : "info");
+  renderBusGame();
+}
+
+function resetBusGame() {
+  busState.large = 0;
+  busState.medium = 0;
+  busState.history = [];
+  renderBusGame();
+  showToast("租車挑戰已重設。");
+}
+
+function renderBusGame() {
+  const stats = getBusStats();
+  $("#large-bus-count").textContent = busState.large;
+  $("#medium-bus-count").textContent = busState.medium;
+  $("#bus-capacity").textContent = `${stats.capacity} / ${busRules.target}`;
+  $("#bus-empty").textContent = stats.empty < 0 ? `不足 ${Math.abs(stats.empty)} 個` : `${stats.empty} 個`;
+  $("#bus-cost").textContent = formatMoney(stats.cost);
+  $("#seat-meter-fill").style.width = `${Math.min(100, Math.round((stats.capacity / busRules.target) * 100))}%`;
+  $("#bus-status-card").classList.toggle("ready", stats.isValid);
+  $("#bus-dispatch").textContent = stats.isValid ? "確認方案並記錄" : "座位不足，無法出發";
+  $("#bus-history-count").textContent = `已嘗試 ${busState.history.length} 種`;
+
+  const body = $("#bus-history");
+  if (!busState.history.length) {
+    body.innerHTML = `<tr><td colspan="4" class="empty-table">尚未有任何調度紀錄。</td></tr>`;
+    return;
+  }
+
+  const lowestCost = Math.min(...busState.history.map((record) => record.cost));
+  body.innerHTML = busState.history.map((record) => {
+    const isLowest = record.cost === lowestCost;
+    const emptyText = record.empty > 0 ? `+${record.empty}` : "0";
+    return `
+      <tr class="${record.evaluation.isBest ? "best-row" : ""}">
+        <td><strong>${record.large} 大 + ${record.medium} 中</strong></td>
+        <td>${record.capacity} <span class="task-meta">(${emptyText})</span></td>
+        <td><strong>${isLowest ? "★ " : ""}${formatMoney(record.cost)}</strong></td>
+        <td>
+          <span class="tag ${record.evaluation.tone}">${record.evaluation.tag}</span>
+          <div class="task-meta">${record.evaluation.desc}</div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
 function boot() {
   $$(".tab-button").forEach((button) => button.addEventListener("click", () => switchGame(button.dataset.game)));
   $("#schedule-reset").addEventListener("click", () => {
@@ -303,8 +431,17 @@ function boot() {
   $("#btn-hourglass-reset").addEventListener("click", resetHourglass);
   $("#btn-flip-a").addEventListener("click", flipA);
   $("#btn-flip-b").addEventListener("click", flipB);
+  $$("[data-bus-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const [kind, delta] = button.dataset.busStep.split(":");
+      updateBusCount(kind, Number.parseInt(delta, 10));
+    });
+  });
+  $("#bus-dispatch").addEventListener("click", dispatchBusPlan);
+  $("#bus-reset").addEventListener("click", resetBusGame);
   renderSchedule();
   resetHourglass();
+  renderBusGame();
 }
 
 boot();
